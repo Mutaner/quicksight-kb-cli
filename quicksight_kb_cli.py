@@ -426,6 +426,7 @@ def main() -> int:
     if args.endpoint_url:
         client_kwargs["endpoint_url"] = args.endpoint_url
     if args.debug:
+        print("[WARNING] Debug mode enabled. AWS credentials may appear in output. Use only in isolated environments.", file=sys.stderr)
         _setup_debug_logging()
 
     try:
