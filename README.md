@@ -1,48 +1,41 @@
 # QuickSight Knowledge Base CLI
 
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![AWS](https://img.shields.io/badge/aws-quicksight-orange.svg)
+
 **The first CLI for Amazon QuickSight Knowledge Bases — available day one.**
 
-> ⚡ **June 2026**: AWS released 8 new Knowledge Base APIs for QuickSight. `boto3` has `list_knowledge_bases` and `delete_knowledge_base`, but **`CreateKnowledgeBase` isn't in the SDK yet**. This CLI fills the gap with a direct SigV4-signed REST call.
+> ⚡ **June 2026**: AWS released 8 new Knowledge Base APIs for QuickSight.
+> `boto3` ships `list_knowledge_bases` and `delete_knowledge_base`, but
+> **`CreateKnowledgeBase` isn't in the SDK yet**. This CLI fills the gap
+> with a direct SigV4-signed REST call.
 
 ## Description
 
-`quicksight-kb-cli` is a production-ready command-line tool for managing **Amazon QuickSight Knowledge Bases** — the new Q feature for grounding AI-generated answers in enterprise data (SharePoint, S3, Salesforce, ServiceNow, Jira, Confluence, and custom sources).
-
-**Why this exists:** The June 2026 QuickSight release added 8 Knowledge Base APIs, but the `boto3` SDK only shipped 7 of them. `CreateKnowledgeBase` is missing. This tool implements the missing endpoint via raw SigV4-authenticated REST calls — no waiting for the SDK update.
+`quicksight-kb-cli` is a production-ready command-line tool for managing
+**Amazon QuickSight Knowledge Bases** — the new Q feature for grounding AI
+answers in enterprise data (SharePoint, S3, Salesforce, ServiceNow, Jira,
+Confluence, and custom sources).
 
 ### Features
 
-- **create-kb** — Create a knowledge base (SigV4 REST, not in boto3 yet)
-- **list-kbs** — List all knowledge bases in your AWS account (boto3)
-- **delete-kb** — Delete a knowledge base by ID (boto3)
-- **Zero-Traceback** — Every AWS error is parsed into clean, human-readable JSON
-- **Network-safe** — 10s connect timeout, 30s read timeout, 3 retries on all calls
-- **SigV4 built-in** — No extra dependencies for REST signing
+- **create-kb** — Create a knowledge base via SigV4 REST (not in boto3 yet)
+- **list-kbs** — List all knowledge bases in your AWS account
+- **delete-kb** — Delete a knowledge base by ID
+- **Zero-Traceback** — Every AWS error is parsed into clean output
+- **Network-safe** — 10s connect timeout, 30s read timeout, 3 retries
+- **SigV4 built-in** — Python stdlib only (`hashlib`, `hmac`, `urllib`)
 
 ## Installation
 
 ```bash
-pip install "boto3>=1.43.25"
+pip install -r requirements.txt
 ```
 
-Python 3.10+ required. No additional dependencies — SigV4 is implemented with Python stdlib only (`hashlib`, `hmac`, `urllib`).
+Python 3.10+ required. No extra dependencies — SigV4 uses Python stdlib.
 
-## Authentication
-
-Credentials are resolved via the standard AWS credential chain:
-
-```bash
-# Environment variables
-export AWS_ACCESS_KEY_ID=AKIA...
-export AWS_SECRET_ACCESS_KEY=*** AWS_DEFAULT_REGION=us-east-1
-
-# Or: ~/.aws/credentials
-# Or: IAM role on EC2/ECS/Lambda
-```
-
-The `--aws-account-id` flag is **required** for all operations (12-digit numeric ID).
-
-## Usage
+## Quick Start
 
 ### Create a knowledge base (REST API — not in boto3)
 
@@ -75,8 +68,7 @@ Supported `--type` values:
 python3 quicksight-kb-cli.py \
     --region us-east-1 \
     --aws-account-id 123456789012 \
-    list-kbs \
-    --max-results 20
+    list-kbs --max-results 20
 ```
 
 ### Delete a knowledge base
@@ -85,31 +77,73 @@ python3 quicksight-kb-cli.py \
 python3 quicksight-kb-cli.py \
     --region us-east-1 \
     --aws-account-id 123456789012 \
-    delete-kb \
-    --id kb-abc123def456
+    delete-kb --id kb-abc123def456
 ```
 
-### Additional options
+### Pipe through `jq`
+
+```bash
+python3 quicksight-kb-cli.py \
+    --region us-east-1 --aws-account-id 123456789012 list-kbs \
+    | jq '.KnowledgeBaseSummaries[] | {name: .Name, status: .Status, type: .Type}'
+```
+
+### Example JSON output
+
+```json
+{
+  "KnowledgeBaseSummaries": [
+    {
+      "KnowledgeBaseId": "kb-abc123def456",
+      "Name": "Customer Support KB",
+      "Status": "ACTIVE",
+      "Type": "SHAREPOINT",
+      "DataSourceArn": "arn:aws:quicksight:...",
+      "DocumentCount": 1520,
+      "CreatedAt": "2026-06-10T12:00:00Z"
+    }
+  ],
+  "NextToken": null
+}
+```
+
+## Authentication
+
+Standard AWS credential chain:
+
+```bash
+# Environment variables
+export AWS_ACCESS_KEY_ID=AKIA...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_DEFAULT_REGION=us-east-1
+
+# Or: ~/.aws/credentials
+# Or: IAM role on EC2/ECS/Lambda
+```
+
+The `--aws-account-id` flag is **required** for all operations (12-digit numeric ID).
+
+## CLI Options
 
 | Flag | Description |
 |------|-------------|
-| `--profile` | AWS credential profile name |
+| `--region` | AWS region |
+| `--aws-account-id` | 12-digit AWS account ID (required) |
+| `--profile` | AWS credential profile |
 | `--endpoint-url` | Custom API endpoint (debugging) |
-| `--debug` | Enable boto3 debug logging |
+| `--debug` | Enable debug logging |
 
 ## Error Handling
 
-This tool never prints Python tracebacks. All errors are caught and displayed in structured format:
+No Python tracebacks. All errors are parsed to clean output:
 
-```
+```text
 [ОШИБКА] Access denied. Check IAM permissions.
-Details: User: arn:aws:iam::123456789012:user/admin is not authorized to perform: quicksight:CreateKnowledgeBase
+Details: User: arn:aws:iam::... is not authorized to perform: quicksight:CreateKnowledgeBase
 ```
-
-Error types handled explicitly:
 
 | AWS Error | User-friendly message |
-|-----------|---------------------|
+|-----------|----------------------|
 | `AccessDeniedException` | Permission denied — check IAM policy |
 | `ResourceNotFoundException` | Resource not found |
 | `ValidationException` | Invalid input data |
@@ -117,18 +151,14 @@ Error types handled explicitly:
 | `ConflictException` | Resource with this name already exists |
 | `InternalServerException` | AWS internal error — retry later |
 
-REST API errors (from the SigV4 path) are also wrapped in clean messages with HTTP status codes.
+REST API errors (SigV4 path) are wrapped with HTTP status codes.
 
-## Commercial Support
+## Contact & Support
 
-Need a Knowledge Base automation pipeline, cross-account deployment, or a custom integration with your data sources?
+Questions, feature requests, or enterprise integrations?
 
-📧 **Email**: [alex.o.europe@gmail.com]  
-🔧 **One-time setup**: $200–$600 per account  
-📋 **Enterprise consulting**: Custom workflows, IAM policies, SharePoint/Salesforce connector tuning
-
-This tool is part of the **AWS New-API Gap Filler** collection — bridging the gap between AWS API releases and community tooling since June 2026.
+📧 **alex.o.europe@gmail.com**
 
 ---
 
-*Made for the Amazon QuickSight Knowledge Base API (June 2026 release)*
+*Part of the AWS New-API Gap Filler collection — June 2026.*

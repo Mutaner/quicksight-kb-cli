@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """
-quicksight-kb-cli.py — CLI для QuickSight Knowledge Base API (июнь 2026)
+quicksight-kb-cli.py — QuickSight Knowledge Base CLI
 
-Управление базами знаний Amazon QuickSight:
-  create-kb   — Создать новую базу знаний (через прямой REST-запрос AWS SigV4)
-  list-kbs    — Список баз знаний в аккаунте
-  delete-kb   — Удалить базу знаний по ID
+CLI tool for Amazon QuickSight Knowledge Bases (June 2026 API).
 
-Зависимости: boto3>=1.43.25 (pip install boto3>=1.43.25)
+Commands:
+  create-kb   — Create a knowledge base (direct SigV4 REST call)
+  list-kbs    — List knowledge bases in the account
+  delete-kb   — Delete a knowledge base by ID
 
-Примеры:
+Note: CreateKnowledgeBase is not yet in boto3 — this tool uses raw SigV4 signing.
+
+Dependencies: boto3>=1.43.25 (pip install -r requirements.txt)
+
+Examples:
   python3 quicksight-kb-cli.py --region us-east-1 --aws-account-id 123456789012 list-kbs
   python3 quicksight-kb-cli.py --region us-east-1 --aws-account-id 123456789012 create-kb \\
-      --name "Моя база знаний" --type "SHAREPOINT" \\
-      --source-uri "arn:aws:quicksight:..." --data-source-arn "arn:aws:..."
+      --name "My KB" --type SHAREPOINT --data-source-arn "arn:aws:..."
   python3 quicksight-kb-cli.py --region us-east-1 --aws-account-id 123456789012 delete-kb --id kb-abc123
 """
 
