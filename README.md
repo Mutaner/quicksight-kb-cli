@@ -123,7 +123,7 @@ REST API errors (from the SigV4 path) are also wrapped in clean messages with HT
 
 Need a Knowledge Base automation pipeline, cross-account deployment, or a custom integration with your data sources?
 
-📧 **Email**: [your-email@example.com]  
+📧 **Email**: [alex.o.europe@gmail.com]  
 🔧 **One-time setup**: $200–$600 per account  
 📋 **Enterprise consulting**: Custom workflows, IAM policies, SharePoint/Salesforce connector tuning
 
