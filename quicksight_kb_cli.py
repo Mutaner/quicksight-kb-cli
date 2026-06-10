@@ -357,7 +357,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--region", default=None, help="AWS region")
     parser.add_argument("--profile", default=None, help="Profile from ~/.aws/credentials")
-    parser.add_argument("--aws-account-id", required=True, help="12-digit AWS Account ID")
+    parser.add_argument("--aws-account-id", required=True,
+                        help="12-digit AWS Account ID (e.g. 123456789012)")
+
+    # Validate aws-account-id format after parsing
+    def _validate_account_id(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+        import re
+        if not re.fullmatch(r"\d{12}", args.aws_account_id):
+            parser.error("--aws-account-id must be exactly 12 digits (e.g. 123456789012)")
+
+    _validate_account_id(parser, parser.parse_known_args()[0])
     parser.add_argument("--endpoint-url", default=None, help="Custom endpoint (debugging)")
     parser.add_argument("--debug", action="store_true", help="Enable boto3 debug logging")
 
