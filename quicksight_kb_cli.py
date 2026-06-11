@@ -219,7 +219,6 @@ def _rest_call(
 
 
 def _is_empty_listing(result: Any, action: str) -> bool:
-    """Check if API returned an empty list for listing operations."""
     if action not in ("list-kbs",):
         return False
     if not isinstance(result, dict):
@@ -248,17 +247,20 @@ def _setup_debug_logging() -> None:
 # ---------------------------------------------------------------------------
 
 
-def cmd_create_kb(
+def action_create_kb(
     client: boto3.client,
     args: argparse.Namespace,
-    session: boto3.Session,
+    session: boto3.Session,          # <-- теперь сессия передаётся явно
 ) -> Dict[str, Any]:
-    """Create a QuickSight knowledge base via direct SigV4 REST call."""
+    """
+    Создать базу знаний QuickSight.
+    CreateKnowledgeBase нет в текущем boto3 — используем прямой REST-запрос.
+    """
     if not args.data_source_arn:
         raise ValueError(
             _friendly_error(
-                "DataSourceArn is required.",
-                "--data-source-arn is mandatory for create-kb.",
+                "Не указан DataSourceArn.",
+                "--data-source-arn обязателен для create-kb.",
             )
         )
 
@@ -266,22 +268,22 @@ def cmd_create_kb(
     if creds is None:
         raise ValueError(
             _friendly_error(
-                "AWS credentials not found.",
-                "Check ~/.aws/credentials or AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.",
+                "Учётные данные AWS не найдены.",
+                "Проверьте ~/.aws/credentials или AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.",
             )
         )
     frozen = creds.get_frozen_credentials()
+
     region = args.region or session.region_name
     if region is None:
         raise ValueError(
             _friendly_error(
-                "AWS region not specified.",
-                "Pass --region or set AWS_DEFAULT_REGION.",
+                "Регион AWS не указан.",
+                "Передайте --region или установите AWS_DEFAULT_REGION.",
             )
         )
 
     path = f"/v1/accounts/{args.aws_account_id}/knowledge-bases/"
-
     body: Dict[str, Any] = {
         "Name": args.name,
         "Type": args.type,
